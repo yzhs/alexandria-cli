@@ -4,7 +4,7 @@ import qualified Config.Dyre as Dyre
 import Control.Monad (liftM, void)
 import System.Environment (getArgs)
 import System.Process (callProcess, readProcess)
-import System.FilePath ((</>))
+import System.FilePath ((</>),(<.>))
 import System.Posix (getEnv)
 
 import Alexandria.Render
@@ -19,8 +19,11 @@ alexandriaMain conf = getArgs >>= handleArgs
         handleArgs ["-I"] = handleArgs ["--info"]
         handleArgs ["--info"] = printStats conf
         handleArgs ["-i"] = handleArgs ["--index"]
-        handleArgs ["--index"] = putStrLn =<< runSwishe conf []
-        handleArgs args = findDocs conf args >>= renderResults conf >>= mapM_ putStrLn >> return ()
+        handleArgs ["--index"] = putStrLn =<< generateIndex conf
+        handleArgs args = do
+          docs <- findDocs conf args
+          mapM_ (\doc -> printUrl doc >> renderResults conf [doc]) docs
+        printUrl = putStrLn . ("file://" ++) . (cacheDirectory conf </>) . (<.> "png")
 
 configDir :: Maybe (IO FilePath)
 configDir = Just $ do
